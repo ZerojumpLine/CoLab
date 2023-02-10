@@ -94,7 +94,7 @@ def testlitstumor(model, saveresults, name, trainval = False, ImgsegmentSize = [
                 newZooms = newZooms + [1.0] * (dimsImgToSave - len(newZooms))
             newLabelImg.header.set_zooms(newZooms)
 
-            directory = "../output/litstumor/%s/" % (name)
+            directory = "./output/litstumor/%s/" % (name)
             if not os.path.exists(directory):
                 os.makedirs(directory)
             savename = directory + 'pred_' + kname + '_Segm.nii.gz'
