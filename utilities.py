@@ -365,18 +365,18 @@ def removesmallprob(policyprob_aug, samplingthreshold, samplenum):
 
 def save_checkpoint(state, is_best, dataset, Savename, filename='checkpoint.pth.tar', record=0):
     """Saves checkpoint to disk"""
-    directory = "../output/%s/%s/"%(dataset, Savename)
+    directory = "./output/%s/%s/"%(dataset, Savename)
     if record > 0 and state['epoch'] % record == 0:
         filename = directory + str(state['epoch']) + filename
     else:
         filename = directory + filename
     torch.save(state, filename)
     if is_best:
-        shutil.copyfile(filename, '../output/%s/%s/'%(dataset, Savename) + 'model_best.pth.tar')
+        shutil.copyfile(filename, './output/%s/%s/'%(dataset, Savename) + 'model_best.pth.tar')
 
 def save_checkpoint_meta(state,  taskG_state, is_best, dataset, Savename, filename='checkpoint.pth.tar', record=0):
     """Saves checkpoint to disk"""
-    directory = "../output/%s/%s/"%(dataset, Savename)
+    directory = "./output/%s/%s/"%(dataset, Savename)
     if record > 0 and state['epoch'] % record == 0:
         filename = directory + str(state['epoch']) + filename
         taskgenerator_filename = directory + str(state['epoch']) + 'TaskGenerator.pth.tar'
@@ -386,7 +386,7 @@ def save_checkpoint_meta(state,  taskG_state, is_best, dataset, Savename, filena
     torch.save(state, filename)
     torch.save(taskG_state, taskgenerator_filename)
     if is_best:
-        shutil.copyfile(filename, '../output/%s/%s/'%(dataset, Savename) + 'model_best.pth.tar')
+        shutil.copyfile(filename, './output/%s/%s/'%(dataset, Savename) + 'model_best.pth.tar')
 
 def one_hot2dist(seg: np.ndarray, resolution: Tuple[float, float, float] = None) -> np.ndarray:
     # assert one_hot(torch.tensor(seg), axis=0)
