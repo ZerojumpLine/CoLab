@@ -8,6 +8,7 @@ from tensorboard_logger import log_value
 from utilities import resize_segmentation
 import time
 import torch.nn.functional as F
+from common_test import testlitstumor
 
 def train(sampling_results, sampling_results_val, model, samplemodel, criterion, 
     optimizer, optimizer_arch, alpha, epoch, logging, args, bratsflag = False):
@@ -181,7 +182,7 @@ def train(sampling_results, sampling_results_val, model, samplemodel, criterion,
 
                 theta = _concat(list(fast_weights.items())).data
 
-                # create model
+                # create model, for the meta-learning process
                 conv_op = nn.Conv3d
                 dropout_op = nn.Dropout3d
                 norm_op = nn.InstanceNorm3d
@@ -409,7 +410,9 @@ def train(sampling_results, sampling_results_val, model, samplemodel, criterion,
     
 
 def calculate_loss(args, targets, output, taskGenerated, detach = False, criterion = nn.CrossEntropyLoss().cuda(), losstype = 0, logging = None, loss_masks = None, BGcls = 0):
-    
+    '''
+    This is the important function to calcualte the loss, both for meta-update and network update
+    '''
     ## the smooth term here should be larger.
     e1 = 1e-32
 
@@ -468,6 +471,9 @@ def calculate_loss(args, targets, output, taskGenerated, detach = False, criteri
             y_onehot.scatter_(1, target_label, 1)
             y_aux_given_x_train = torch.cat((y_aux_given_x_train[:, 0:1, :, :, :], y_onehot[:, 1:args.NumsClass, :, :, :], y_aux_given_x_train[:, 1:, :, :, :]), 1)
 
+            '''
+            Here I want to combine the context label with the original labels.
+            '''
             for kcls in list(range(y_aux_given_x_train.shape[1])):
                 if args.vanilla:
                     # it would make generated tasks all zeros.
@@ -558,22 +564,8 @@ def calculate_loss(args, targets, output, taskGenerated, detach = False, criteri
             # lossCE = lossCE.sum()
             lossCEmain = lossCE[:, 1:args.NumsClass]
             lossauxgenerated = lossCE[:, atasklist]
-            # log_np_y_given_x_train = (1 - p_y_given_x_train + e1).log()
-            # lossnCE = - (1. / p_y_given_x_train.shape[0]) * log_np_y_given_x_train * (1-y_aux_given_x_train)
-            # lossnCEmain = lossnCE[:, 1:args.NumsClass]
             lossaux = lossCEmain.sum() + lossauxgenerated.sum()
 
-            # print('pred_log:')
-            # print(torch.max(log_p_y_given_x_train))
-            # print(torch.min(log_p_y_given_x_train))
-
-            # print('y_label:')
-            # print(torch.max(y_aux_given_x_train))
-            # print(torch.min(y_aux_given_x_train))
-
-            # critertionbce = nn.BCELoss().cuda()
-            # y_aux_given_x_train = y_aux_given_x_train.detach()
-            # lossbce = critertionbce(p_y_given_x_train[:,1], y_aux_given_x_train[:,1])
             losssample += weights[kds] * lossaux
     else:
         outputas = output
@@ -602,50 +594,20 @@ def calculate_loss(args, targets, output, taskGenerated, detach = False, criteri
             # this code might reduce the dsc we had before, because it is mean of different classes (exclude bg cls).
             if detach:
                 '''Maybe I do not want a large BG class'''
-                if args.cedsc0cedscminclass1 == 0:
-                    # losssample += SoftDiceLoss(outputas, y_aux_given_x_train, list(range(args.NumsClass+args.taskcls-1)), loss_mask = loss_mask)
-                    BGcls = 0
-                    y_cls0 = torch.zeros(y_aux_given_x_train.shape)
-                    y_cls0[:, BGcls, :, :, :] = 1
-                    y_cls0 = y_cls0.cuda()
-                    y_comb = y_aux_given_x_train * loss_mask + y_cls0 * (1 - loss_mask)
-                    losssample += SoftDiceLoss(outputas, y_comb, list(range(args.NumsClass)))
-                if args.cedsc0cedscminclass1 == 1:
-                    # losssample += SoftDiceLoss(outputas, y_aux_given_x_train, FGlist, loss_mask = loss_mask, do_bg = True)
-                    y_cls0 = torch.zeros(y_aux_given_x_train.shape)
-                    y_cls0[:, BGcls, :, :, :] = 1
-                    y_cls0 = y_cls0.cuda()
-                    y_comb = y_aux_given_x_train * loss_mask + y_cls0 * (1 - loss_mask)
-                    losssample += SoftDiceLoss(outputas, y_comb, FGlist, do_bg = True)
-                if args.cedsc0cedscminclass1 == 2: ## use DSC loss that only includes the tumor class, but the context FG does not learn well.
-                    # losssample += SoftDiceLoss(outputas, y_aux_given_x_train, list(range(args.NumsClass)), loss_mask = loss_mask)
-                    losssample += SoftDiceLoss(outputas, y_aux_given_x_train, list(range(args.NumsClass)))
+                BGcls = 0
+                y_cls0 = torch.zeros(y_aux_given_x_train.shape)
+                y_cls0[:, BGcls, :, :, :] = 1
+                y_cls0 = y_cls0.cuda()
+                y_comb = y_aux_given_x_train * loss_mask + y_cls0 * (1 - loss_mask)
+                losssample += SoftDiceLoss(outputas, y_comb, list(range(args.NumsClass)))
             else:
                 '''What loss should I choose for inner iteration?'''
-                if args.cedsc0ce1cedscallclass2 == 0:
-                    # losssample += SoftDiceLoss(outputas, y_aux_given_x_train, list(range(args.NumsClass+args.taskcls-1)), loss_mask = loss_mask)
-                    BGcls = 0
-                    y_cls0 = torch.zeros(y_aux_given_x_train.shape)
-                    y_cls0[:, BGcls, :, :, :] = 1
-                    y_cls0 = y_cls0.cuda()
-                    y_comb = y_aux_given_x_train * loss_mask + y_cls0 * (1 - loss_mask)
-                    losssample += SoftDiceLoss(outputas, y_comb, list(range(args.NumsClass+args.taskcls-1)))
-                if args.cedsc0ce1cedscallclass2 == 1:
-                    losssample += 0
-                if args.cedsc0ce1cedscallclass2 == 2:
-                    # losssample += SoftDiceLoss(outputas, y_aux_given_x_train, list(range(args.NumsClass+args.taskcls-1)), loss_mask = loss_mask, do_bg = True)
-                    y_cls0 = torch.zeros(y_aux_given_x_train.shape)
-                    y_cls0[:, BGcls, :, :, :] = 1
-                    y_cls0 = y_cls0.cuda()
-                    y_comb = y_aux_given_x_train * loss_mask + y_cls0 * (1 - loss_mask)
-                    losssample += SoftDiceLoss(outputas, y_comb, list(range(args.NumsClass+args.taskcls-1)), do_bg = True)
-                if args.cedsc0ce1cedscallclass2 == 3: ## decide the BG class based on the moving average
-                    # losssample += SoftDiceLoss(outputas, y_aux_given_x_train, FGlist, loss_mask = loss_mask, do_bg = True)
-                    y_cls0 = torch.zeros(y_aux_given_x_train.shape)
-                    y_cls0[:, BGcls, :, :, :] = 1
-                    y_cls0 = y_cls0.cuda()
-                    y_comb = y_aux_given_x_train * loss_mask + y_cls0 * (1 - loss_mask)
-                    losssample += SoftDiceLoss(outputas, y_comb, FGlist, do_bg = True)
+                BGcls = 0
+                y_cls0 = torch.zeros(y_aux_given_x_train.shape)
+                y_cls0[:, BGcls, :, :, :] = 1
+                y_cls0 = y_cls0.cuda()
+                y_comb = y_aux_given_x_train * loss_mask + y_cls0 * (1 - loss_mask)
+                losssample += SoftDiceLoss(outputas, y_comb, list(range(args.NumsClass+args.taskcls-1)))
         
         ## I calculate the loss myself here, because the default xentr loss requires hard vector 
         outputas = outputas.transpose(1, 2)
@@ -682,6 +644,9 @@ def calculate_loss(args, targets, output, taskGenerated, detach = False, criteri
     return losssample
 
 def calculate_loss_origin(args, target_var, output, criterion = nn.CrossEntropyLoss().cuda(), losstype = 0):
+    '''
+    This is just an update function to make sure the calculated loss is identity to the original in some cases
+    '''
     if args.deepsupervision:
         losssample = 0
         targetpicks = target_var.data.cpu().numpy()
@@ -727,6 +692,10 @@ def calculate_loss_origin(args, target_var, output, criterion = nn.CrossEntropyL
     return losssample
 
 def calcualte_loss_val(args, target_varval, outputval, criterionbce):
+    '''
+    This is the function to calculate the meta-validation loss.
+    I calculated a lot of validation values here, in order to assess the performance in a comprehensive way
+    '''
 
     # larger smooth here, to make things stable.
     # if I set is as 1e-32, the loss would becomme nan. Maybe it is connected with the meta-gradient process.

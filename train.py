@@ -234,10 +234,7 @@ def main():
         # evaluate on validation set every 5 epoches
         if args.evalevery > 0:
             if epoch % args.evalevery == 0 or epoch == args.epochs-1 :
-                if args.aux:
-                    prec1 = validate(DatafileValFold, model, criterion, logging, epoch, Savename, args, NumsClass = args.NumsClass)
-                else:
-                    prec1 = validate(DatafileValFold, model, criterion, logging, epoch, Savename, args, NumsClass = args.NumsClass + args.taskcls - 1)
+                prec1 = validate(DatafileValFold, model, criterion, logging, epoch, Savename, args, NumsClass = args.NumsClass + args.taskcls - 1)
 
         # remember best prec@1 and save checkpoint
         is_best = prec1 > best_prec1

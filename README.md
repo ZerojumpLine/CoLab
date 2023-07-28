@@ -6,32 +6,45 @@ In this study, we further propose context label learning (CoLab), which automati
 
 <br/> <div align=center><img src="figs/MethodOverview.png" width="700px"/></div>
 
-## Requirements
+## Installation
 
-This code was developed with `python==3.7`.
+For Conda users, you can create a new Conda environment using
 
 ```
-ipykernel==6.9.1
-simpleitk==2.2.1
-scipy==1.2.1
-scikit-image==0.17.2
-matplotlib==3.0.3
-torch==1.2.0
-torchvision==0.4.0
-tensorboard_logger==0.1.0
-tensorboard
-tensorflow==1.13.1
-protobuf==3.15.8
-nibabel==2.4.1
-future==0.18.2
-threadpoolctl==2.1.0
+conda create -n colab python=3.7
+```
+
+after activating the environment with 
+```
+source activate colab
+```
+try to install all the dependencies with
+
+```
+pip install -r requirements.txt
+```
+also install the conda environment for the jupyter notebook kernel.
+
+```
+python -m ipykernel install --user --name=colab
 ```
 
 ## Data and preprocessing
 
 We conduct experiments with several medical image segmentation datasets. The datasets of liver tumor, colon tumor and pancreas tumor from [Medical Segmentation Decathlon](https://drive.google.com/drive/folders/1HqEgzS8BV2c7xYNrZdEAnrHk7osJJ--2). Brain lesion dataset can be downloaded from [ATLAS](http://fcon_1000.projects.nitrc.org/indi/retro/atlas.html). Kidney tumor dataset can be downloaded from [KiTS19](https://github.com/neheller/kits19). We keep the downloaded data in `./datadownloaded`.
 
-We provide the pre-processing code for liver tumor segmentation, which is based on CT. Please refer to `datapreprocessing.ipynb` about intensity normalization, resampling etc. After obtaining the preprocessed data saved in `./datapreprocessed`, we generate the datafiles such as those in `./datafiles`.
+We provide the pre-processing code for liver tumor segmentation, which is based on CT. Please refer to `datapreprocessing.ipynb` about intensity normalization, resampling etc. 
+
+The example datasets are saved like:
+
+```
+datadownload/
+├── Task03_Liver/
+  ├── ImagesTr/
+  └── LablesTr/
+```
+
+After obtaining the preprocessed data saved in `./datapreprocessed`, we generate the datafiles such as those in `./datafiles`.
 
 ## Training
 
