@@ -2,3 +2,5 @@
 /datadownload/Task03_Liver/*
 /.ipynb_checkpoints
 /output/litstumor/*
+
+.DS_Store

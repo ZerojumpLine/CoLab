@@ -31,7 +31,17 @@ python -m ipykernel install --user --name=colab
 
 ## Data and preprocessing
 
-We conduct experiments with several medical image segmentation datasets. The datasets of liver tumor, colon tumor and pancreas tumor from [Medical Segmentation Decathlon](https://drive.google.com/drive/folders/1HqEgzS8BV2c7xYNrZdEAnrHk7osJJ--2). Brain lesion dataset can be downloaded from [ATLAS](http://fcon_1000.projects.nitrc.org/indi/retro/atlas.html). Kidney tumor dataset can be downloaded from [KiTS19](https://github.com/neheller/kits19). We keep the downloaded data in `./datadownloaded`.
+### Data downloading
+
+We conduct experiments with several medical image segmentation datasets. Please consider downloading the datasets using follow links: 
+- The datasets of liver tumor, colon tumor and pancreas tumor from [Medical Segmentation Decathlon](https://drive.google.com/drive/folders/1HqEgzS8BV2c7xYNrZdEAnrHk7osJJ--2). 
+- Brain lesion dataset can be downloaded from [ATLAS](http://fcon_1000.projects.nitrc.org/indi/retro/atlas.html). 
+- Brain tumor (Vestibular Schwannoma) dataset can be downloaded from [TCIA](https://www.cancerimagingarchive.net/collection/vestibular-schwannoma-seg/).
+- Kidney tumor dataset can be downloaded from [KiTS19](https://github.com/neheller/kits19). 
+
+We keep the downloaded data in `./datadownloaded`.
+
+### Data preprocessing
 
 We provide the pre-processing code for liver tumor segmentation, which is based on CT. Please refer to `datapreprocessing.ipynb` about intensity normalization, resampling etc. 
 
